@@ -84,19 +84,20 @@ MOV 47H #0FFH
 
 ;LER FILA
 
-MOV R0, 40H		; O registrador R0 guarda a posição da fila que está sendo lida
-CJNE R0, T_INV, LOOP	; Se uma Tecla inválida for apertada, vai para a rotina LOOP
-CJNE R0, ENTER, ENTERR	; Se a Tecla Enter for apertada, vai para a rotina ENTERR
+MOV R0, #F_INI		; O registrador R0 guarda a posição da fila que está sendo lida
+CJNE @R0, T_INV, LOOP	; Se uma Tecla inválida for apertada, vai para a rotina LOOP
+CJNE @R0, ENTER, ENTERR	; Se a Tecla Enter for apertada, vai para a rotina ENTERR
 
 	;Decide se a tecla é numérica ou não
 CLR C
-MOV A, R0
+MOV A, @R0		;?
 SUBB A, #0AH		;Essa operação verifica se a tecla é númerica ou não
-JC TECLAN		;Se for numérica vai para a rotina TECLAN
+
+JC RECEBERN		;Se for numérica vai para a rotina RECEBERN
 JMP TECLANN		;Se não for numérica, vai para a rotina TECLANN
 
 
-TECLAN:
+RECEBERN:
 
 TECLANN:
 
