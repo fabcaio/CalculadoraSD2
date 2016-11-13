@@ -1,0 +1,85 @@
+$MOD 51 ;especifica o microcontrolador utilizado (8051)
+ORG 0 ;inicia no espaco de memoria 0
+
+;Inicializacao
+
+XH EQU 30H	;MSB X
+XL EQU 31H 	;LSB X
+YH EQU 32H	;MSB Y
+YL EQU 33H 	;LSB Y
+ZH EQU 34H 	;MSB Z
+ZL EQU 35H 	;LSB Z
+TH EQU 36H 	;MSB T
+TL EQU 37H 	;LSB T
+MEMH EQU 38H 	;MEMORIA PARA STO E RCL
+MEML EQU 39H 	;MEMORIA PARA STO E RCL
+AUX1H EQU 3AH 	;MSB AUXILIAR 1
+AUX1L EQU 3BH 	;LSB AUXILIAR 1
+AUX2H EQU 3CH 	;MSB AUXILIAR 2
+AUX2L EQU 3DH 	;LSB AUXILIAR 2
+F_INI EQU 40H 	;Inicio da fila
+
+;Representacao numerica
+
+20H.0 BIT SINAL_X 	;bit=0 positivo, bit=1 negativo
+20H.1 BIT SINAL_Y 	;bit=0 positivo, bit=1 negativo
+20H.2 BIT SINAL_Z 	;bit=0 positivo, bit=1 negativo
+20H.3 BIT SINAL_T	;bit=0 positivo, bit=1 negativo
+
+;Condicoes Anormais
+
+20H.4 BIT ERRO ;bit=0 OK, bit=1 ERRO
+20H.5 BIT OVFL ;bit=0 OK, bit=1 ultrapassagem
+
+;Reset dos registradores
+
+MOV XH, #0H	;Reseta MSB X
+MOV XL, #0H	;Reseta LSB X
+MOV YH, #0H	;Reseta MSB Y
+MOV YL, #0H	;Reseta LSB Y
+MOV ZH, #0H	;Reseta MSB Z
+MOV ZL, #0H	;Reseta LSB Z
+MOV TH, #0H	;Reseta MSB T
+MOV TL, #0H	;Reseta LSB T
+
+MOV A, #0H	;Reseta o acumulador	
+MOV B, #0H	;Reseta o registrador B
+CLR C		;Reseta o carry
+
+;Teclas
+
+CHS EQU 0AH 	;Mudar sinal de X
+CLX EQU 0BH 	;Zerar X
+CLS EQU 0CH 	;Zerar a pilha (Clear Stack)
+ENTER EQU 0DH 	;"Enter" (PUSH)
+DROP EQU 0EH	;POP
+SWAP EQU 0FH 	;Trocar X e Y
+MAIS EQU 10H 	;Y+X
+MENOS EQU 11H 	;Y-X
+MULT EQU 12H 	;Y*X
+DIVI EQU 13H 	;Y/X
+MODUL EQU 14H 	;Módulo de Y/X (Resto da divisão)
+RRX EQU 15H 	;Rodar Direita
+RLX EQU 16H 	;Rodar Esquerda
+SRX EQU 17H 	;Shift Direita
+SLX EQU 18H 	;Shift Esquerda
+QUAD EQU 19H 	;X*X
+POW EQU 1AH 	;Y^X
+RSUP EQU 1BH 	;Rodar pilha para cima
+RSDW EQU 1CH 	;Rodar pilha para baixo
+STO EQU 1DH 	;Armazenar X na memória
+RCL EQU 1EH 	;Copiar a memoria para X
+T_INV EQU 0FFH	;Tecla inválida
+
+;Fila de teste
+
+MOV 40H,#04
+MOV 41H,#02
+MOV 42H,#0DH
+MOV 43H,#03
+MOV 44H,#05
+MOV 45H,#04
+MOV 46H,#10H
+MOV 47H #0FFH
+
+;Teclas numericas
