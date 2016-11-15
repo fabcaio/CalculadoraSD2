@@ -1,0 +1,214 @@
+;Representacao numerica
+
+20H.0 BIT SINAL_X 	;bit=0 positivo, bit=1 negativo
+20H.1 BIT SINAL_Y 	;bit=0 positivo, bit=1 negativo
+20H.2 BIT SINAL_Z 	;bit=0 positivo, bit=1 negativo
+20H.3 BIT SINAL_T	;bit=0 positivo, bit=1 negativo
+20H.4 BIT ERRO 		;bit=0 OK, bit=1 ERRO
+20H.5 BIT OVFL 		;bit=0 OK, bit=1 ultrapassagem
+
+CHS:
+	XRL 20H, #01H	;Inverte o bit 20H.0 (SINAL_X)
+
+ou
+;JB SINAL_X, TROCA
+;SETB SINAL_X
+;TROCA: CLR SINAL_X
+;RET
+	
+CLX:
+	MOV XL, #0H
+	MOV XH, #0H
+	CLR SINAL_X
+	RET
+
+CLS:
+	MOV XL, #0H
+	MOV XH, #0H
+	MOV YL, #0H
+	MOV YH, #0H
+	MOV ZL, #0H
+	MOV ZH, #0H
+	MOV TL, #0H
+	MOV TH, #0H	
+	RET
+
+ENTER:
+	MOV YH, XH
+	MOV YL, YL
+	MOV ZH, YH
+	MOV ZL, YL
+	MOV TH, ZH
+	MOV TL, ZL
+	MOV XH, #0H
+	MOV XL, #0H
+
+	MOV A, 20H
+	RL A
+	ANL A, #0EH
+	MOV 20H, A
+	RET
+
+DROP:
+
+SWAP:
+	MOV XH, AUX1H
+	MOV XL, AUX1L
+	MOV XH, XH
+	MOV XL, YL
+	MOV YH, AUX1H
+	MOV YL, AUX1L
+	RET
+
+SOMAR:
+	JB SINAL_X, COMP10X_SOMA
+	JB SINAL_Y, COMP10Y_SOMA
+	MOV A, XL
+	ADD A, YL
+	DA A
+	MOV XL, A
+	MOV A, XH
+	ADDC A, YH
+	DA A
+	MOV XH, A
+
+	COMP10X_SOMA:
+	JB SINAL_Y, COM10XY_SOMA
+	MOV A, XL
+	CLR C
+	SUBB A, #64H		;64H = 9999(decimal) complemento 10 de XL
+	ADD A, YL
+	DA A
+	MOV XL, A
+	MOV A, XH
+	ADDC A, YH
+	DA A
+	MOV XH, A
+
+	COMP10Y_SOMA:
+
+	COM10XY_SOMA:
+
+
+	RET
+	
+
+SUBT:
+	XRL 20H, #02H	;Inverte o bit 20H.1 (SINAL_Y)
+	LCALL SOMAR
+	RET
+
+MULT:
+	MOV AUX1, YL
+	MOV AUX2, YH
+
+	MOV XL, A	;O byte menos significativo é armazenado em R0
+	MOV XH, B	;O byte mais significativo é armazenado em R1
+	RET
+	
+
+DIVID:
+
+MODULO:
+	CLR SINAL_X
+	RET
+
+RRX:
+	MOV A, XL
+	CLR C
+	RLC A
+
+RLX:
+
+SRX:
+
+SLX:
+
+
+XP2:
+	MOV YL, XL	; YL=XL
+	MOV YH, XH	; YH=XH
+	LCALL MULT	; X*(Y=X)
+	RET
+
+YPX:
+	MOV A, XL	; A = XL
+	SUBB A, #01H	; A = XL - 1
+	MOV AUX1, A	; AUX1 = A
+	MOV AUX2, XH	; AUX2 = XH
+
+	PWR1:
+	MOV YL, XL	; YL=XL
+	MOV YH, XH	; YH=XH
+	LCALL MULT	; X*(Y=X)
+	DJNZ AUX1, PWR1	; Se AUX1 =! 0, vai para PWR1
+
+	MOV AUX1, XL	; AUX1 = XL
+	DJNZ AUX2, PWR1	; Se AUX2 =! 0, vai para PWR2
+
+	PWR2:
+	MOV YL, XL	; YL=XL
+	MOV YH, XH	; YH=XH
+	LCALL MULT	; X*(Y=X)
+	DJNZ AUX1, PWR2	; Se AUX1 =! 0, vai para PWR2
+	RET
+
+RSUP:
+	MOV AUX1H, XH
+	MOV AUX1L, XL
+	MOV XH, TH
+	MOV XL, TL
+	MOV TH, ZH
+	MOV TL, ZL
+	MOV ZH, YH
+	MOV ZL, YL
+	MOV YH, AUX1H
+	MOV YL, AUX1L
+
+	MOV A, 20H
+	RR A
+	ANL A, #0FH
+	MOV 20H, A
+	RR A
+	RR A
+	RR A
+	RR A
+	ORL A, 20H
+	ANL A, #0FH
+	MOV 20H, A
+	RET
+
+RSDW:
+	MOV AUX1H, XH
+	MOV AUX1L, XL
+	MOV XH, YH
+	MOV XL, YL
+	MOV YH, ZH
+	MOV YL, ZL
+	MOV ZH, TH
+	MOV ZL, TL
+	MOV TH, AUX1H
+	MOV TL, AUX1L
+
+	MOV A, 20H
+	RL A
+	ANL A, #0FH
+	MOV 20H, A
+	RL A
+	RL A
+	RL A
+	RL A
+	ORL A, 20H
+	ANL A, #0FH
+	MOV 20H, A
+	RET	
+
+STO:
+	MOV MEMH, XH
+	MOV MEML, XL
+	RET
+
+RCL:
+	MOV XH, MEMH
+	MOV XL, MEML
+	RET
