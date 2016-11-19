@@ -61,8 +61,120 @@ SWAP:
 	RET
 
 SOMAR:
+	MOV AUX2H, #0H
 	JB SINAL_X, XNEG
 	JB SINAL_Y, YNEG
+	MOV A, AUX2H
+	JNZ SUMRET	
+	
+	XYPOS:
+	MOV A, XL
+	ADD A, YL
+	DA A
+	MOV XL, A
+
+	MOV A, XH
+	CLR C
+	ADDC A, YH
+	DA A
+	MOV XH, A
+	RET
+
+	XNEG:
+	MOV AUX1H, XH		;SALVA XH
+	MOV AUX1L, XL		;SALVA XL
+	JB SINAL_Y, XYNEG
+	MOV A, #9AH
+	CLR C
+	SUBB A, XL		;Calcula o complemento 10 de XL
+	DA A
+	ADD A, YL
+	DA A
+	MOV XL, A
+
+	ADDC A, #0H
+	MOV AUX2L, A		;Salva o carry
+	MOV A, #99H
+	CLR C
+	SUBB A, XH		;Calcula o complemento 10 de XH
+	DA A
+	ADD A, YH
+	ADD A, AUX2L
+	DA A
+	MOV XH, A
+
+	CLR C
+	SUBB AUX1H, YH
+	JC S1			;Vai para S1 se Y>X
+	
+	SUBB AUX1L, YL
+	JC S1			;Vai para S1 se Y>X
+
+	MOV A, #9AH
+	CLR C
+	SUBB A, XL		;Calcula o complemento 10 de XL
+	DA A
+	MOV A, #99H
+	CLR C
+	SUBB A, XH		;Calcula o complemento 10 de XH
+	DA A
+	
+	INC AUX2H
+	RET
+
+	S1:
+	CLR SINAL_X		;Positiva o sinal do resultado
+
+	INC AUX2H
+	RET
+
+	YNEG:
+	MOV AUX1H, XH		;SALVA XH
+	MOV AUX1L, XL		;SALVA XL
+	MOV A, #9AH
+	CLR C
+	SUBB A, XL		;Calcula o complemento 10 de XL
+	DA A
+	ADD A, YL
+	DA A
+	MOV XL, A
+
+	ADDC A, #0H
+	MOV AUX2L, A		;Salva o carry
+	MOV A, #99H
+	CLR C
+	SUBB A, XH		;Calcula o complemento 10 de XH
+	DA A
+	ADD A, YH
+	ADD A, AUX2L
+	DA A
+	MOV XH, A
+
+	CLR C
+	SUBB AUX1H, YH
+	JC S1			;Vai para S1 se Y>X
+	
+	SUBB AUX1L, YL
+	JC S1			;Vai para S1 se Y>X
+	INC AUX2H
+	RET
+
+
+	S1:
+	SETB SINAL_X		;Negativa o sinal do resultado
+	MOV A, #9AH
+	CLR C
+	SUBB A, XL		;Calcula o complemento 10 de XL
+	DA A
+	MOV A, #99H
+	CLR C
+	SUBB A, XH		;Calcula o complemento 10 de XH
+	DA A
+
+	INC AUX2H
+	RET
+
+	XYNEG:
 	MOV A, XL
 	ADD A, YL
 	DA A
@@ -74,47 +186,11 @@ SOMAR:
 	DA A
 	MOV XH, A
 
-	XNEG:
-	JB SINAL_Y, XYNEG
-	MOV A, #9AH
-	CLR C
-	SUBB A, XL		;Calcula o complemento 10 de XL
-	DA A
-	ADD A, YL
-	DA A
-	MOV XL, A
+	INC AUX2H
+	RET
 
-	ADDC A, #0H
-	MOV AUX1, A		;Salva o carry
-	MOV A, #99H
-	CLR C
-	SUBB A, XH		;Calcula o complemento 10 de XH
-	DA A
-	ADD A, YH
-	ADD A, AUX1
-	DA A
-	MOV XH, A
-
-	YNEG:
-	MOV A, #9AH
-	CLR C
-	SUBB A, XL		;Calcula o complemento 10 de XL
-	DA A
-	ADD A, YL
-	DA A
-	MOV XL, A
-
-	ADDC A, #0H
-	MOV AUX1, A		;Salva o carry
-	MOV A, #99H
-	CLR C
-	SUBB A, XH		;Calcula o complemento 10 de XH
-	DA A
-	ADD A, YH
-	ADD A, AUX1
-	DA A
-	MOV XH, A
-	
+	SUMRET:
+	RET
 
 SUBT:
 	XRL 20H, #02H	;Inverte o bit 20H.1 (SINAL_Y)
@@ -122,8 +198,8 @@ SUBT:
 	RET
 
 MULT:
-	MOV AUX1, YL
-	MOV AUX2, YH
+	MOV AUX1L, YL
+	MOV AUX1H, YH
 
 	MOV XL, A	;O byte menos significativo é armazenado em R0
 	MOV XH, B	;O byte mais significativo é armazenado em R1
