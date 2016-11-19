@@ -91,10 +91,10 @@ SOMAR:
 	ADD A, YL
 	DA A
 	MOV XL, A
-
 	ADDC A, #0H
 	MOV AUX2L, A		;Salva o carry
-	MOV A, #99H
+
+	MOV A, #9AH
 	CLR C
 	SUBB A, XH		;Calcula o complemento 10 de XH
 	DA A
@@ -114,7 +114,7 @@ SOMAR:
 	CLR C
 	SUBB A, XL		;Calcula o complemento 10 de XL
 	DA A
-	MOV A, #99H
+	MOV A, #9AH
 	CLR C
 	SUBB A, XH		;Calcula o complemento 10 de XH
 	DA A
@@ -138,9 +138,9 @@ SOMAR:
 	ADD A, YL
 	DA A
 	MOV XL, A
-
 	ADDC A, #0H
 	MOV AUX2L, A		;Salva o carry
+
 	MOV A, #99H
 	CLR C
 	SUBB A, XH		;Calcula o complemento 10 de XH
@@ -156,9 +156,9 @@ SOMAR:
 	
 	SUBB AUX1L, YL
 	JC S1			;Vai para S1 se Y>X
+
 	INC AUX2H
 	RET
-
 
 	S1:
 	SETB SINAL_X		;Negativa o sinal do resultado
@@ -200,9 +200,13 @@ SUBT:
 MULT:
 	MOV AUX1L, YL
 	MOV AUX1H, YH
+	MOV YL, XL
+	MOV YH, XH
+	JB SINAL_X, M1
 
-	MOV XL, A	;O byte menos significativo é armazenado em R0
-	MOV XH, B	;O byte mais significativo é armazenado em R1
+
+	LCALL SOMAR
+	DJNZ AUX1L, MULT
 	RET
 	
 
