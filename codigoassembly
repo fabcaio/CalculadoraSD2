@@ -41,7 +41,9 @@ MOV ZH, #0H	;Reseta MSB Z
 MOV ZL, #0H	;Reseta LSB Z
 MOV TH, #0H	;Reseta MSB T
 MOV TL, #0H	;Reseta LSB T
+MOV 20H, #0H	;Reseta o sinal da pilha
 
+MOV AUX1H, #0
 MOV A, #0H	;Reseta o acumulador	
 MOV B, #0H	;Reseta o registrador B
 CLR C		;Reseta o carry
@@ -82,27 +84,66 @@ MOV 45H,#04
 MOV 46H,#10H
 MOV 47H #0FFH
 
-;LER FILA
-
 MOV R0, #F_INI		; O registrador R0 guarda a posição da fila que está sendo lida
-CJNE @R0, T_INV, LOOP	; Se uma Tecla inválida for apertada, vai para a rotina LOOP
-CJNE @R0, ENTER, ENTERR	; Se a Tecla Enter for apertada, vai para a rotina ENTERR
 
-	;Decide se a tecla é numérica ou não
+LERFILA:
+			;Decide se a tecla é numérica ou não
 CLR C
 MOV A, @R0		;?
 SUBB A, #0AH		;Essa operação verifica se a tecla é númerica ou não
 
+XRL A, T_INV		;Verifica se a tecla 0FFH foi apertada
+JZ LINF
+
+INC R0			;Incrementa o ponteiro
 JC RECEBERN		;Se for numérica vai para a rotina RECEBERN
 JMP TECLANN		;Se não for numérica, vai para a rotina TECLANN
 
+LINF:
+	SJMP $
 
 RECEBERN:
 
+DIGITO_0:
+	CJNE AUX1H, #0, DIGITO_1
+	MOV XL, @R0
+	INC AUX1H
+	LJMP LERFILA
+
+DIGITO_1:
+	CJNE AUX1H, #1, DIGITO_2
+	MOV A, @R0
+	MOV B, XL
+	MUL AB
+	MOV XL, A
+	INC AUX1H
+	LJMP LERFILA
+
+DIGITO_2:
+	CJNE AUX1H, #2, DIGITO_3
+	MOV XH, @R0
+	INC AUX1H
+	LJMP LERFILA
+
+DIGITO_4:
+	CJNE AUX1H, #3, D_OVER
+	MOV A, @R0
+	MOV B, XH
+	MUL AB
+	MOV XH, A
+	INC AUX1H
+	LJMP LERFILA
+
+D_OVER:
+	SJMP $ 			; Entra em um laço infinito se o número de dígitos for maior que 4
+
 TECLANN:
+	MOV A, @R0		;Move a tecla não numerica para o acumulador
+	XRL A, MAIS		;O resultado dessa operação só será zero quando TECLA = 10H
+	JZ MAIS_R		;Vai para a ROTINA_TECLA caso TECLA = 10H
 
-ENTERR:
+	LJMP LERFILA
 
-
-LOOP:
-	JMP LOOP
+MAIS_R:
+	LCALL SOMAR
+	LJMP LERFILA
