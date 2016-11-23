@@ -89,7 +89,7 @@ MOV R0, #F_INI		; O registrador R0 guarda a posição da fila que está sendo li
 LERFILA:
 			;Decide se a tecla é numérica ou não
 CLR C
-MOV A, @R0		;?
+MOV A, @R0
 SUBB A, #0AH		;Essa operação verifica se a tecla é númerica ou não
 
 XRL A, T_INV		;Verifica se a tecla 0FFH foi apertada
@@ -142,8 +142,16 @@ TECLANN:
 	XRL A, MAIS		;O resultado dessa operação só será zero quando TECLA = 10H
 	JZ MAIS_R		;Vai para a ROTINA_TECLA caso TECLA = 10H
 
+	MOV A, @R0
+	XRL A, ENTER
+	JZ ENTER_R
+
 	LJMP LERFILA
 
 MAIS_R:
-	LCALL SOMAR
+	LCALL MAIS_SB
+	LJMP LERFILA
+
+ENTER_R:
+	LCALL ENTER_SB
 	LJMP LERFILA
