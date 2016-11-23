@@ -150,8 +150,21 @@ D_OVER:
 TECLANN:
 	MOV R1, #0H
 
+	CJNE @R0, #MAIS, TE1
+	INC 10H
+	LCALL MAIS_SB
+	LCALL DROP_SB
+	LJMP LERFILA
+TE1:	CJNE @R0, #ENTER, TE2
+	INC 11H
+	LCALL ENTER_SB
+	INC R4
+	LJMP LERFILA
+TE2:	LJMP LERFILA	
+
 	MOV A, @R0		;Move a tecla não numerica para o acumulador
 	XRL A, #MAIS		;O resultado dessa operação só será zero quando TECLA = 10H
+	INC 12H
 	JZ MAIS_R		;Vai para a ROTINA_TECLA caso TECLA = 10H
 
 	MOV A, @R0
@@ -162,7 +175,9 @@ TECLANN:
 
 MAIS_R:
 	LCALL MAIS_SB
+	LCALL DROP_SB
 	LJMP LERFILA
+
 
 ENTER_R:
 	LCALL ENTER_SB
@@ -181,8 +196,13 @@ ENTER_SB:
 	MOV A, 20H
 	RL A
 	ANL A, #0EH
+	MOV AUX1L, A
+
+	MOV A, 20H
+	ANL A, #01H
+	ORL A, AUX1L
 	MOV 20H, A
-RET
+	RET
 
 MAIS_SB:
 	JB SINAL_X, XNEG
@@ -199,6 +219,7 @@ MAIS_SB:
 	ADDC A, YH
 	DA A
 	MOV XH, A
+	LCALL DROP_SB
 	RET
 
 	XNEG:
@@ -295,5 +316,24 @@ MAIS_SB:
 	SUBB A, XH		;Calcula o complemento 10 de XH
 	DA A
 
-RET
+	RET
+
+DROP_SB:
+	MOV YL, ZL
+	MOV YH, ZH
+	MOV ZL, TL
+	MOV ZH, TH
+
+	MOV A, 20H
+	RR A
+	ANL A, #06H
+	ORL A, 20H
+	MOV AUX1L, A
+
+	MOV A, 20H
+	ANL A, #09H
+	ORL A, AUX1L
+	MOV 20H, AUX1L
+	INC R3
+	RET
 END
