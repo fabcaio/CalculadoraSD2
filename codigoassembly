@@ -1,4 +1,5 @@
-$MOD 51 ;especifica o microcontrolador utilizado (8051)
+$MOD51
+
 ORG 0 ;inicia no espaco de memoria 0
 
 ;Inicializacao
@@ -21,15 +22,15 @@ F_INI EQU 40H 	;Inicio da fila
 
 ;Representacao numerica
 
-20H.0 BIT SINAL_X 	;bit=0 positivo, bit=1 negativo
-20H.1 BIT SINAL_Y 	;bit=0 positivo, bit=1 negativo
-20H.2 BIT SINAL_Z 	;bit=0 positivo, bit=1 negativo
-20H.3 BIT SINAL_T	;bit=0 positivo, bit=1 negativo
+SINAL_X BIT 20H.0
+SINAL_Y BIT 20H.1
+SINAL_Z BIT 20H.2
+SINAL_T BIT 20H.3
 
 ;Condicoes Anormais
 
-20H.4 BIT ERRO ;bit=0 OK, bit=1 ERRO
-20H.5 BIT OVFL ;bit=0 OK, bit=1 ultrapassagem
+ERRO BIT 20H.4
+OVFL BIT 20H.5
 
 ;Reset dos registradores
 
@@ -43,7 +44,6 @@ MOV TH, #0H	;Reseta MSB T
 MOV TL, #0H	;Reseta LSB T
 MOV 20H, #0H	;Reseta o sinal da pilha
 
-MOV AUX1H, #0
 MOV A, #0H	;Reseta o acumulador	
 MOV B, #0H	;Reseta o registrador B
 CLR C		;Reseta o carry
@@ -55,7 +55,7 @@ CLX EQU 0BH 	;Zerar X
 CLS EQU 0CH 	;Zerar a pilha (Clear Stack)
 ENTER EQU 0DH 	;"Enter" (PUSH)
 DROP EQU 0EH	;POP
-SWAP EQU 0FH 	;Trocar X e Y
+SWAP_L EQU 0FH 	;Trocar X e Y
 MAIS EQU 10H 	;Y+X
 MENOS EQU 11H 	;Y-X
 MULT EQU 12H 	;Y*X
@@ -82,20 +82,21 @@ MOV 43H,#03
 MOV 44H,#05
 MOV 45H,#04
 MOV 46H,#10H
-MOV 47H #0FFH
+MOV 47H,#0FFH
 
-MOV R0, #F_INI		; O registrador R0 guarda a posição da fila que está sendo lida
+MOV R0, #3FH		; O registrador R0 guarda a posição da fila que está sendo lida
+MOV R1, #0		; R1 guarda a posição do dígito
 
-LERFILA:
-			;Decide se a tecla é numérica ou não
+LERFILA:		;Decide se a tecla é numérica ou não
+INC R0
 CLR C
 MOV A, @R0
 SUBB A, #0AH		;Essa operação verifica se a tecla é númerica ou não
 
-XRL A, T_INV		;Verifica se a tecla 0FFH foi apertada
+MOV A, @R0
+XRL A, #T_INV		;Verifica se a tecla 0FFH foi apertada
 JZ LINF
 
-INC R0			;Incrementa o ponteiro
 JC RECEBERN		;Se for numérica vai para a rotina RECEBERN
 JMP TECLANN		;Se não for numérica, vai para a rotina TECLANN
 
@@ -105,45 +106,56 @@ LINF:
 RECEBERN:
 
 DIGITO_0:
-	CJNE AUX1H, #0, DIGITO_1
+	CJNE R1, #0, DIGITO_1
 	MOV XL, @R0
-	INC AUX1H
+	INC R1
 	LJMP LERFILA
 
+
 DIGITO_1:
-	CJNE AUX1H, #1, DIGITO_2
-	MOV A, @R0
-	MOV B, XL
+	CJNE R1, #1, DIGITO_2
+	MOV A, XL
+	MOV B, #10H
 	MUL AB
+	ADD A, @R0
 	MOV XL, A
-	INC AUX1H
+	INC R1
 	LJMP LERFILA
 
 DIGITO_2:
-	CJNE AUX1H, #2, DIGITO_3
-	MOV XH, @R0
-	INC AUX1H
+	CJNE R1, #2, DIGITO_3
+	MOV A, XL
+	MOV B, #10H
+	MUL AB
+	ADD A, @R0
+	MOV XL, A
+	MOV XH, B
+	INC R1
 	LJMP LERFILA
 
-DIGITO_4:
-	CJNE AUX1H, #3, D_OVER
-	MOV A, @R0
-	MOV B, XH
+DIGITO_3:
+	CJNE R1, #3, D_OVER
+	MOV A, XL
+	MOV B, #10H
 	MUL AB
-	MOV XH, A
-	INC AUX1H
+	ADD A, @R0
+	MOV XL, A
+	MOV XH, B
+	INC R1
 	LJMP LERFILA
 
 D_OVER:
 	SJMP $ 			; Entra em um laço infinito se o número de dígitos for maior que 4
 
 TECLANN:
+	MOV R1, #0H
+
 	MOV A, @R0		;Move a tecla não numerica para o acumulador
-	XRL A, MAIS		;O resultado dessa operação só será zero quando TECLA = 10H
+	XRL A, #MAIS		;O resultado dessa operação só será zero quando TECLA = 10H
 	JZ MAIS_R		;Vai para a ROTINA_TECLA caso TECLA = 10H
 
 	MOV A, @R0
-	XRL A, ENTER
+	XRL A, #ENTER
 	JZ ENTER_R
 
 	LJMP LERFILA
@@ -155,3 +167,133 @@ MAIS_R:
 ENTER_R:
 	LCALL ENTER_SB
 	LJMP LERFILA
+
+ENTER_SB:
+	MOV TL, ZL
+	MOV TH, ZH
+	MOV ZL, YL
+	MOV ZH, YH
+	MOV YL, XL
+	MOV YH, XH
+	MOV XL, #0H
+	MOV XH, #0H
+
+	MOV A, 20H
+	RL A
+	ANL A, #0EH
+	MOV 20H, A
+RET
+
+MAIS_SB:
+	JB SINAL_X, XNEG
+	JB SINAL_Y, YNEG	
+	
+	XYPOS:
+	MOV A, XL
+	ADD A, YL
+	DA A
+	MOV XL, A
+
+	MOV A, XH
+	CLR C
+	ADDC A, YH
+	DA A
+	MOV XH, A
+	RET
+
+	XNEG:
+	MOV AUX1H, XH		;SALVA XH
+	MOV AUX1L, XL		;SALVA XL
+	JB SINAL_Y, XYPOS
+	MOV A, #9AH
+	CLR C
+	SUBB A, XL		;Calcula o complemento 10 de XL
+	DA A
+	ADD A, YL
+	DA A
+	MOV XL, A
+	ADDC A, #0H
+	MOV AUX2L, A		;Salva o carry
+
+	MOV A, #9AH
+	CLR C
+	SUBB A, XH		;Calcula o complemento 10 de XH
+	DA A
+	ADD A, YH
+	ADD A, AUX2L
+	DA A
+	MOV XH, A
+
+	CLR C
+	MOV A, AUX1H
+	SUBB A, XH
+	JC S1			;Vai para S1 se Y>X
+	
+	CLR C
+	MOV A, AUX1L
+	SUBB A, XL
+	JC S1			;Vai para S1 se Y>X
+
+	MOV A, #9AH
+	CLR C
+	SUBB A, XL		;Calcula o complemento 10 de XL
+	DA A
+	MOV A, #9AH
+	CLR C
+	SUBB A, XH		;Calcula o complemento 10 de XH
+	DA A
+	
+	RET
+
+	S1:
+	CLR SINAL_X		;Positiva o sinal do resultado
+
+	RET
+
+	YNEG:
+	MOV AUX1H, XH		;SALVA XH
+	MOV AUX1L, XL		;SALVA XL
+	MOV A, #9AH
+	CLR C
+	SUBB A, XL		;Calcula o complemento 10 de XL
+	DA A
+	ADD A, YL
+	DA A
+	MOV XL, A
+	ADDC A, #0H
+	MOV AUX2L, A		;Salva o carry
+
+	MOV A, #99H
+	CLR C
+	SUBB A, XH		;Calcula o complemento 10 de XH
+	DA A
+	ADD A, YH
+	ADD A, AUX2L
+	DA A
+	MOV XH, A
+
+	CLR C
+	MOV A, AUX1H
+	SUBB A, YH
+	JC S2			;Vai para S2 se Y>X
+	
+	CLR C
+	MOV A, AUX1L
+	SUBB A, YL
+	JC S2			;Vai para S2 se Y>X
+
+	RET
+
+	S2:
+	SETB SINAL_X		;Negativa o sinal do resultado
+	MOV A, #9AH
+	CLR C
+	SUBB A, XL		;Calcula o complemento 10 de XL
+	DA A
+	MOV A, #99H
+	CLR C
+	SUBB A, XH		;Calcula o complemento 10 de XH
+	DA A
+
+RET
+END
